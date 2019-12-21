@@ -169,7 +169,8 @@ class GPT2Generator:
         self.batch_size = 1
         self.stop_token = None
 
-        self.model_name = "model_v5_pytorch"
+        # self.model_name = "model_v5_pytorch"
+        self.model_name = "model_v5_pytorch_half"
         self.model_dir = "generator/gpt2/models"
         self.checkpoint_path = os.path.join(self.model_dir, self.model_name)
         # self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model

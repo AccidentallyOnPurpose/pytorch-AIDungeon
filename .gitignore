@@ -9,4 +9,4 @@ venv/
 .env/
 generator/gpt2/models/
 saved_stories/
-
+/prompts/
