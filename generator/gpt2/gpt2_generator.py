@@ -68,7 +68,7 @@ def sample_sequence(model, length, context, num_samples=1, temperature=1, top_k=
     context = context.unsqueeze(0).repeat(num_samples, 1)
     generated = context
     with torch.no_grad():
-        for _ in tqdm(range(length)):
+        for _ in tqdm(range(length), leave=False, desc='generating'):
 
             inputs = {'input_ids': generated}
             if is_xlnet:
@@ -132,6 +132,14 @@ class GPT2Generator:
         self.model = model_class.from_pretrained(self.checkpoint_path)
         self.model.to(self.device)
         self.model.eval()
+
+        # Try to use fp16 for speed and memory
+        try:
+            from apex import amp  # Apex is only required if we use fp16 training
+        except ImportError:
+            pass
+        else:
+            model = amp.initialize(model, opt_level='O2')
 
         # context_tokens = self.tokenizer.encode(' ', add_special_tokens=False)
         context_tokens = [self.tokenizer.pad_token_type_id, self.tokenizer.pad_token_type_id]
