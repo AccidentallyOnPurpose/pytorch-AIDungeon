@@ -5,6 +5,8 @@ from pathlib import Path
 import logging
 import numpy as np
 import torch
+import torch.nn.functional as F
+from tqdm import tqdm
 
 from transformers import GPT2Config
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
@@ -22,12 +24,11 @@ MODEL_CLASSES = {
     'gpt2': (GPT2LMHeadModel, GPT2Tokenizer),
 }
 
-
-def set_seed(args):
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
+# def set_seed(args):
+#     np.random.seed(args.seed)
+#     torch.manual_seed(args.seed)
+#     if args.n_gpu > 0:
+#         torch.cuda.manual_seed_all(args.seed)
 
 
 def top_k_top_p_filtering(logits, top_k=0, top_p=0.0, filter_value=-float('Inf')):
@@ -67,7 +68,7 @@ def sample_sequence(model, length, context, num_samples=1, temperature=1, top_k=
     context = context.unsqueeze(0).repeat(num_samples, 1)
     generated = context
     with torch.no_grad():
-        for _ in trange(length):
+        for _ in tqdm(range(length)):
 
             inputs = {'input_ids': generated}
             if is_xlnet:
@@ -121,8 +122,9 @@ class GPT2Generator:
         self.model_name = "model_v5_pytorch"
         self.model_dir = "generator/gpt2/models"
         self.checkpoint_path = os.path.join(self.model_dir, self.model_name)
-        self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model
+        # self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Using device={self.device}, checkpoint={self.checkpoint_path}")
 
         # Load tokenizer and model
         model_class, tokenizer_class = MODEL_CLASSES['gpt2']
@@ -131,13 +133,14 @@ class GPT2Generator:
         self.model.to(self.device)
         self.model.eval()
 
-        # context_tokens = self.tokenizer.encode(raw_text, add_special_tokens=False)
-        out = self.sample_sequence().tolist()
+        # context_tokens = self.tokenizer.encode(' ', add_special_tokens=False)
+        context_tokens = [self.tokenizer.pad_token_type_id, self.tokenizer.pad_token_type_id]
+        out = self.sample_sequence(context_tokens).tolist()
         # out = out[:, len(context_tokens):].tolist()
         for o in out:
             text = self.tokenizer.decode(o, clean_up_tokenization_spaces=True)
-            if args.stop_token:
-                index = text.find(args.stop_token)
+            if self.stop_token:
+                index = text.find(self.stop_token)
                 if index == -1:
                     index = None
                 text = text[:index]
@@ -145,15 +148,15 @@ class GPT2Generator:
     def sample_sequence(self, context_tokens=None):
         out = sample_sequence(
             model=self.model,
-            context_tokens=context_tokens,
+            context=context_tokens,
             length=self.generate_num,
-            context=self.context,
+            # context=self.context,
             temperature=self.temp,
             top_k=self.top_k,
             top_p=self.top_p,
             repetition_penalty=self.repetition_penalty,
             num_samples=self.samples,
-            device=args.device
+            device=self.device
             # batch_size=self.batch_size,
         )
         return out
@@ -202,14 +205,15 @@ class GPT2Generator:
         generated = 0
         for _ in range(self.samples // self.batch_size):
             out = self.sample_sequence(
-                [context_tokens for _ in range(self.batch_size)]
+                context_tokens
+                # [context_tokens for _ in range(self.batch_size)]
             )
-            out = out[:, len(context_tokens):].to_list()
+            out = out[:, len(context_tokens):].tolist()
             for o in out:
                 generated += 1
-                text = tokenizer.decode(o, clean_up_tokenization_spaces=True)
-                if args.stop_token:
-                    index =  text.find(args.stop_token)
+                text = self.tokenizer.decode(o, clean_up_tokenization_spaces=True)
+                if self.stop_token:
+                    index = text.find(self.stop_token)
                     if index == -1:
                         index = None
                     text = text[:index]
