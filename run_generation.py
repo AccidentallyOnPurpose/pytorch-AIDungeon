@@ -264,15 +264,6 @@ if __name__ == '__main__':
     main()
 
 """
-# https://huggingface.co/transformers/converting_tensorflow_models.html#openai-gpt-2
-export OPENAI_GPT2_CHECKPOINT_PATH=./generator/gpt2/models/model_v5/
 export PYTORCH_DUMP_OUTPUT=./generator/gpt2/models/model_v5_pytorch/
-
-transformers gpt2 \
-  $OPENAI_GPT2_CHECKPOINT_PATH \
-  $PYTORCH_DUMP_OUTPUT \
-  [OPENAI_GPT2_CONFIG]
-
-
-python run_generation.py --model_type gpt2 --model_name_or_path ./generator/gpt2/models/model_v5/
+python run_generation.py --model_type gpt2 --model_name_or_path ./generator/gpt2/models/model_v5_pytorch/
 """
