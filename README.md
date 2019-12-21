@@ -8,8 +8,12 @@ I did this because tensorflow is annoying to compile for my xeon processor an it
 
 No colab yet.
 
+If you want the converted model, just ask in the issues and I'll make it available.
+
 ## Changes
 
 - use half precision for smaller model
 - use pytorch
+- added suggested actions (a bit messy and poor right now)
+- 50% of the time an action is attempted ("You X" vs "You try to X") to make it harder
 

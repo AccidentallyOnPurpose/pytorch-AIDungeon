@@ -205,7 +205,8 @@ class GPT2Generator:
                     index = None
                 text = text[:index]
 
-    def sample_sequence(self, context_tokens=None):
+    def sample_sequence(self, context_tokens=None, generate_num=None):
+        generate_num = generate_num if generate_num is not None else self.generate_num
         out = sample_sequence(
             model=self.model,
             context=context_tokens,
@@ -261,14 +262,14 @@ class GPT2Generator:
 
         return result
 
-    def generate_raw(self, prompt):
+    def generate_raw(self, prompt, generate_num=None):
         context_tokens = self.tokenizer.encode(prompt, add_special_tokens=False)
 
         generated = 0
         for _ in range(self.samples // self.batch_size):
             out = self.sample_sequence(
-                context_tokens
-                # [context_tokens for _ in range(self.batch_size)]
+                context_tokens,
+                generate_num=generate_num
             )
             out = out[:, len(context_tokens) :].tolist()
             for o in out:

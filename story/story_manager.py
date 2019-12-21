@@ -3,8 +3,12 @@ import os
 import subprocess
 import uuid
 from subprocess import Popen
+import logging
 
 from story.utils import *
+
+logger = logging.getLogger(__name__)
+
 
 
 class Story:
@@ -151,15 +155,15 @@ class Story:
             return "Error save not found."
 
     def get_rating(self):
-        while True:
-            try:
-                rating = input("Please rate the story quality from 1-10: ")
-                rating_float = max(min(float(rating), 10), 1)
-            except ValueError:
-                print("Please return a valid number.")
-            else:
-                self.rating = rating_float
-                return
+        try:
+            rating = input("Please rate the story quality from 1-10: ")
+            rating_float = max(min(float(rating), 10), 1)
+        except ValueError:
+            print("Please return a valid number.")
+            rating_float = 0
+        else:
+            self.rating = rating_float
+            return
 
 
 class StoryManager:
@@ -215,6 +219,8 @@ class UnconstrainedStoryManager(StoryManager):
 
         result = self.generate_result(action_choice)
         self.story.add_to_story(action_choice, result)
+        logger.debug("action_choice %s", action_choice)
+        logger.debug("result %s", result)
         return result
 
     def generate_result(self, action):

@@ -98,16 +98,29 @@ def getGenerator():
 if not Path("prompts", "Anime").exists():
     try:
         import pastebin
+        pastebin.download_clover_prompts()
     except:
         colPrint(
             "Failed to scrape pastebin, possible connection issue.\nTry again later. Continuing without downloading prompts...",
             colors["error"],
         )
-    else:
-        pastebin.download_clover_prompts()
 
 
-def main(story_manager):
+class AIPlayer:
+    def __init__(self, generator):
+        self.generator = generator
+
+    def get_action(self, prompt):
+        sample_sequence
+        result = self.generator.generate_raw(prompt, generate_num=10)
+        results = result.split("\n")
+        results = [s.strip() for s in results]
+        results = [s for s in results if len(s) > 3]
+        return results[0]
+
+def main(generator):
+    story_manager = UnconstrainedStoryManager(generator)
+    ai_player = AIPlayer(generator)
     print("\n")
 
     with open("interface/mainTitle.txt", "r", encoding="utf-8") as file:
@@ -171,6 +184,14 @@ def main(story_manager):
         colPrint(str(story_manager.story), colors["ai-text"])
 
         while True:
+            action_prompt = story_manager.story.results[-1] if story_manager.story.results else '\nWhat do you do now?'
+            suggested_actions = [ai_player.get_action(action_prompt) for _ in range(2)]
+            suggested_actions = [s.strip() for s in suggested_actions]
+            suggested_actions = [s for s in suggested_actions if len(s)>3]
+            suggested_action = "\n?> ".join(suggested_actions)
+            colPrint("Suggested actions:\n " + suggested_action, colors["selection-value"])
+            print("\n")
+
             if settings.getboolean("console-bell"):
                 print("\x07", end="")
             action = colInput("> ", colors["main-prompt"], colors["user-text"])
@@ -242,7 +263,7 @@ def main(story_manager):
                     action = action[0].lower() + action[1:]
 
                     if "You" not in action[:6] and "I" not in action[:6]:
-                        if random.random()>0.5:
+                        if random.random() > 0.5:
                             action = "You " + action
                         else:
                             action = "You try to " + action
@@ -260,8 +281,8 @@ def main(story_manager):
                         story_manager.story.results[-1], story_manager.story.results[-2]
                     )
                     if similarity > 0.9:
-                        story_manager.story.actions = story_manager.story.actions[:-1]
-                        story_manager.story.results = story_manager.story.results[:-1]
+                        story_manager.story.actions = story_manager.story.actions[:-2]
+                        story_manager.story.results = story_manager.story.results[:-2]
                         colPrint(
                             "Woops that action caused the model to start looping. Try a different action to prevent that.",
                             colors["error"],
@@ -291,5 +312,5 @@ def main(story_manager):
 
 if __name__ == "__main__":
     generator = getGenerator()
-    story_manager = UnconstrainedStoryManager(generator)
-    main(story_manager)
+
+    main(generator)
