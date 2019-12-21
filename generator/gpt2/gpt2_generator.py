@@ -206,11 +206,11 @@ class GPT2Generator:
                 text = text[:index]
 
     def sample_sequence(self, context_tokens=None, generate_num=None):
-        generate_num = generate_num if generate_num is not None else self.generate_num
+        generate_num = generate_num if (generate_num is not None) else self.generate_num
         out = sample_sequence(
             model=self.model,
             context=context_tokens,
-            length=self.generate_num,
+            length=generate_num,
             # context=self.context,
             temperature=self.temp,
             top_k=self.top_k,

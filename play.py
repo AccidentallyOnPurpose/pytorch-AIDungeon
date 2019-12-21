@@ -188,8 +188,8 @@ def main(generator):
             suggested_actions = [ai_player.get_action(action_prompt) for _ in range(2)]
             suggested_actions = [s.strip() for s in suggested_actions]
             suggested_actions = [s for s in suggested_actions if len(s)>3]
-            suggested_action = "\n?> ".join(suggested_actions)
-            colPrint("Suggested actions:\n " + suggested_action, colors["selection-value"])
+            suggested_action = "?>" + "\n?> ".join(suggested_actions)
+            colPrint("\nSuggested actions:\n " + suggested_action, colors["selection-value"])
             print("\n")
 
             if settings.getboolean("console-bell"):
@@ -307,6 +307,7 @@ def main(generator):
                         colPrint(result, colors["ai-text"])
 
                 else:
+                    colPrint("> " + action, colors["user-text"])
                     colPrint(result, colors["ai-text"])
 
 
