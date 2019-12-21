@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
 
 """
-download aidungeon model from this torrent or elsewhere
+download aidungeon2 v5 model from this torrent or elsewhere
 -  magnet:?xt=urn:btih:b343b83b35bff774dab13e0281ce13b3daf37d3e&dn=model_v5&tr=udp%3a%2f%2ftracker.coppersurfer.tk%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.leechers-paradise.org%3a6969%2fannounce
 export OPENAI_GPT2_CHECKPOINT_PATH=../generator/gpt2/models/model_v5
 export PYTORCH_DUMP_OUTPUT=../generator/gpt2/models/model_v5_pytorch
@@ -84,4 +84,6 @@ python convert_gpt2_model.py \
     --gpt2_checkpoint_path $OPENAI_GPT2_CHECKPOINT_PATH \
     --pytorch_dump_folder_path $PYTORCH_DUMP_OUTPUT \
     --gpt2_config_file ./aidungeonv2_model_v5_config.json
+wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-xl-merges.txt -o $PYTORCH_DUMP_OUTPUT/merges.txt
+wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-xl-vocab.json -o $PYTORCH_DUMP_OUTPUT/vocab.json
 """
