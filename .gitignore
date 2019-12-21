@@ -2,9 +2,11 @@
 .idea
 AI-Adventure-2bb65e3a4e2f.json
 *.py[cod]
-data/text_adventures.txt
+data/stories/text_adventures.txt
+data/stories/
 venv/
 .vscode/
 .env/
 generator/gpt2/models/
 saved_stories/
+

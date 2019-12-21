@@ -1,4 +1,6 @@
 import csv
+from tqdm import tqdm
+from pathlib import Path
 import json
 
 from story.utils import *
@@ -86,26 +88,23 @@ def get_stories(filename):
     return stories
 
 
-output_file_path = "text_adventures.txt"
-with open(output_file_path, "w") as output_file:
-    filenames = ["stories/story" + str(i) + ".json" for i in range(0, 93)]
-    # filenames = []
-    for filename in filenames:
-        tree = load_tree(filename)
-        print('"' + tree["tree_id"] + '",')
+output_file_path = "data/stories/text_adventures.txt"
 
-    filenames += ["stories/crowdsourcedstory" + str(i) + ".json" for i in range(0, 12)]
+story_dir = Path("data/stories/v43/")
+
+with open(output_file_path, "w") as output_file:
     stories = []
-    for filename in filenames:
-        filename_stories = get_stories(filename)
-        stories += filename_stories
-        print(len(stories))
+    filenames = sorted(story_dir.glob("crowdsourcedstory*.json")) + sorted(story_dir.glob("chooseyourstory_*.json"))
+    for filename in tqdm(filenames):
+        if len(json.load(open(filename))): # ignore empty files where there was an error scraping
+            filename_stories = get_stories(filename)
+            stories += filename_stories
 
     raw_text = ""
     start_token = "<|startoftext|>"
     end_token = "<|endoftext|>"
     for story in stories:
         raw_text += start_token + story + end_token + "\n"
-        print(len(raw_text))
 
     output_file.write(raw_text)
+    print(f'written to {output_file_path}')
