@@ -6,3 +6,6 @@ pyyaml
 regex
 tracery
 transformers==2.3.0
+torch==1.2.0
+colorama
+textwrap

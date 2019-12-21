@@ -3,10 +3,8 @@ import os
 import warnings
 from pathlib import Path
 import logging
-import numpy as np
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
 
 from transformers import GPT2Config
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
@@ -157,7 +155,7 @@ def sample_sequence(
 
 class GPT2Generator:
     def __init__(
-        self, generate_num=60, temperature=0.4, top_k=40, top_p=0.9, censor=True
+        self, generate_num=60, temperature=0.4, top_k=40, top_p=0.9, censor=False
     ):
         self.generate_num = generate_num
         self.temp = temperature
