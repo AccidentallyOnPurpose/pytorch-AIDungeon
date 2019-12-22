@@ -82,7 +82,7 @@ def sample_sequence(
 
             filtered_logits = top_k_top_p_filtering(
                 next_token_logits, top_k=top_k, top_p=top_p
-            )
+            ).float()
             if temperature == 0:  # greedy sampling:
                 next_token = torch.argmax(filtered_logits, dim=-1).unsqueeze(-1)
             else:

@@ -166,7 +166,7 @@ def main(generator):
     print("\n")
 
     with open("interface/mainTitle.txt", "r", encoding="utf-8") as file:
-        colPrint(file.read(), colors["title"])
+        print(file.read())
 
     with open("interface/subTitle.txt", "r", encoding="utf-8") as file:
         cols = get_terminal_size()[0]
@@ -174,9 +174,6 @@ def main(generator):
             line = re.sub(r"\n", "", line)
             line = line[:cols]
             colPrint(
-                # re.sub(
-                #     r"\|[ _]*\|", lambda x: "\x1B[7m" + x.group(0) + "\x1B[27m", line
-                # ),
                 line,
                 colors["subtitle"],
                 False,
