@@ -238,7 +238,7 @@ def main(generator):
                 suggested_actions = ai_player.get_actions(action_prompt)
                 if len(suggested_actions):
                     suggested_actions_enum = [
-                        f"{i}> {a}\n" for i, a in enumerate(suggested_actions)
+                        "{}> {}\n".format(i, a) for i, a in enumerate(suggested_actions)
                     ]
                     suggested_action = "".join(suggested_actions_enum)
                     colPrint(

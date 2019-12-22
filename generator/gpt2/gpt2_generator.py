@@ -114,7 +114,7 @@ class GPT2Generator:
         self.checkpoint_path = os.path.join(self.model_dir, self.model_name)
         # self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Using device={self.device}, checkpoint={self.checkpoint_path}")
+        logger.info("Using device={}, checkpoint={}".format(self.device, self.checkpoint_path))
 
         # Load tokenizer and model
         model_class, tokenizer_class = MODEL_CLASSES["gpt2"]
