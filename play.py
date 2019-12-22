@@ -2,14 +2,27 @@ import os
 import random
 import configparser
 import gc
+import logging
+import re
+import yaml
 from pathlib import Path
 from random import shuffle
 from shutil import get_terminal_size
 
-from generator.gpt2.gpt2_generator import *
-from story.story_manager import *
-from story.utils import *
+from generator.gpt2.gpt2_generator import GPT2Generator
+from story.story_manager import (
+    StoryManager,
+    UnconstrainedStoryManager,
+    ConstrainedStoryManager,
+)
+from story.utils import logger
 import textwrap
+import transformers.tokenization_utils
+
+# silence transformers outputs when loading model
+logging.getLogger("transformers.tokenization_utils").setLevel(logging.WARN)
+logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)
+logging.getLogger("transformers.configuration_utils").setLevel(logging.WARN)
 
 # add color for windows users that install colorama
 try:
@@ -23,20 +36,23 @@ with open(Path("interface", "clover"), "r", encoding="utf-8") as file:
     print(file.read())
 
 # perhaps all the following should be put in a seperate utils file like original
-config = configparser.ConfigParser()
-config.read("config.ini")
-settings = config["Settings"]
-colors = config["Colors"]
+config = yaml.load(open("config.yaml"), Loader=yaml.FullLoader)
+settings = config["settings"]
+config_act = settings["actions"]
+colors = config["colors"]
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = settings["log-level"]
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    level=logging.INFO,
+)
+logger.setLevel(settings["log-level"])
 
 
-# ECMA-48 set graphics codes for the curious. Check out "man console_codes"
 def colPrint(str, col="0", wrap=True):
-    if wrap and settings.getint("text-wrap-width") > 1:
-        str = textwrap.fill(
-            str, settings.getint("text-wrap-width"), replace_whitespace=False
-        )
+    # ECMA-48 set graphics codes for the curious. Check out "man console_codes"
+    if wrap and settings["text-wrap-width"] > 1:
+        str = textwrap.fill(str, settings["text-wrap-width"], replace_whitespace=False)
     print("\x1B[{}m{}\x1B[{}m".format(col, str, colors["default"]))
 
 
@@ -48,22 +64,22 @@ def colInput(str, col1=colors["default"], col2=colors["default"]):
 
 def getNumberInput(n):
     while True:
-    val = colInput(
-        "Enter a number from above (default 0):",
-        colors["selection-prompt"],
-        colors["selection-value"],
-    )
-    if val == "":
-        return 0
+        val = colInput(
+            "Enter a number from above (default 0):",
+            colors["selection-prompt"],
+            colors["selection-value"],
+        )
+        if val == "":
+            return 0
         try:
             val = int(val)
         except ValueError:
             colPrint("Invalid number.", colors["error"])
             continue
         if 0 > val or val > n:
-        colPrint("Invalid choice.", colors["error"])
+            colPrint("Invalid choice.", colors["error"])
             continue
-    else:
+        else:
             return val
 
 
@@ -94,10 +110,10 @@ def getGenerator():
         colors["loading-message"],
     )
     return GPT2Generator(
-        generate_num=settings.getint("generate-num"),
-        temperature=settings.getfloat("temp"),
-        top_k=settings.getint("top-keks"),
-        top_p=settings.getfloat("top-p"),
+        generate_num=settings["generate-num"],
+        temperature=settings["temp"],
+        top_k=settings["top-keks"],
+        top_p=settings["top-p"],
     )
 
 
@@ -105,7 +121,8 @@ if not Path("prompts", "Anime").exists():
     try:
         import pastebin
         pastebin.download_clover_prompts()
-    except:
+    except Exception as e:
+        logger.info("Failed to scrape pastebin: %e", e)
         colPrint(
             "Failed to scrape pastebin, possible connection issue.\nTry again later. Continuing without downloading prompts...",
             colors["error"],
@@ -117,12 +134,24 @@ class AIPlayer:
         self.generator = generator
 
     def get_action(self, prompt):
-        sample_sequence
-        result = self.generator.generate_raw(prompt, generate_num=10)
+        result = self.generator.generate_raw(
+            prompt, generate_num=int(config_act["generate-number"])
+        )
+
+        # The generations actions carry on into the next prompt, so lets remove the prompt
         results = result.split("\n")
         results = [s.strip() for s in results]
-        results = [s for s in results if len(s) > 3]
-        return results[0]
+        results = [s for s in results if len(s) > int(config_act["min-length"])]
+        logger.debug("full suggested action '%s'. Cropped: '%s'", result, results[0])
+        # Sometimes actions are generated with leading > ! . or ?. Likely the model trying to finish the prompt or start an action.
+        result = results[0].strip().lstrip(" >!.?")
+
+        # Often actions are cropped with sentance fragment, lets remove. Or we could just turn up config_act["generate-number"]
+        i = max([result.find(e) for e in [".", "?", "!"]])
+        if i / len(result) > 0.7:
+            result = result[:-i]
+        return result
+
 
 def main(generator):
     story_manager = UnconstrainedStoryManager(generator)
@@ -138,9 +167,10 @@ def main(generator):
             line = re.sub(r"\n", "", line)
             line = line[:cols]
             colPrint(
-                re.sub(
-                    r"\|[ _]*\|", lambda x: "\x1B[7m" + x.group(0) + "\x1B[27m", line
-                ),
+                # re.sub(
+                #     r"\|[ _]*\|", lambda x: "\x1B[7m" + x.group(0) + "\x1B[27m", line
+                # ),
+                line,
                 colors["subtitle"],
                 False,
             )
@@ -190,13 +220,31 @@ def main(generator):
         colPrint(str(story_manager.story), colors["ai-text"])
 
         while True:
-            action_prompt = story_manager.story.results[-1] if story_manager.story.results else '\nWhat do you do now?'
-            suggested_actions = [ai_player.get_action(action_prompt) for _ in range(2)]
-            suggested_actions = [s.strip() for s in suggested_actions]
-            suggested_actions = [s for s in suggested_actions if len(s)>3]
-            suggested_action = "?>" + "\n?> ".join(suggested_actions)
-            colPrint("\nSuggested actions:\n " + suggested_action, colors["selection-value"])
-            print("\n")
+            # Generate suggested actions
+            if int(config_act["alternatives"]) > 0:
+                action_prompt = (
+                    story_manager.story.results[-1]
+                    if story_manager.story.results
+                    else "\nWhat do you do now?"
+                )
+                suggested_actions = [
+                    ai_player.get_action(action_prompt)
+                    for _ in range(int(config_act["alternatives"]))
+                ]
+                suggested_actions = [
+                    s
+                    for s in suggested_actions
+                    if len(s) > int(config_act["min-length"])
+                ]
+                suggested_actions_enum = [
+                    f"{i}> {a}\n" for i, a in enumerate(suggested_actions)
+                ]
+                suggested_action = "".join(suggested_actions_enum)
+                colPrint(
+                    "\nSuggested actions:\n" + suggested_action,
+                    colors["selection-value"],
+                )
+                print("\n")
 
             if settings.getboolean("console-bell"):
                 print("\x07", end="")
@@ -264,7 +312,7 @@ def main(generator):
                 elif action in [str(i) for i in range(len(suggested_actions))]:
                     action = suggested_actions[int(action)]
 
-                elif action[0] == '"':
+                if action[0] == '"':
                     action = "You say " + action
 
                 else:

@@ -1,34 +1,17 @@
-import json
 import os
 import warnings
-from pathlib import Path
 import logging
 import torch
 import torch.nn.functional as F
 
-from transformers import GPT2Config
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
+from story.utils import second_to_first_person, cut_trailing_sentence, remove_profanity, logger
 
-from story.utils import *
-
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-    datefmt="%m/%d/%Y %H:%M:%S",
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
-
-debug_print = os.environ.get("AID_DEBUG", False)
-if debug_print:
-    logger.warn("Running in AID_DEBUG=True mode")
-
-warnings.filterwarnings("ignore")
-# MAX_LENGTH = int(10000)  # Hardcoded max length to avoid infinite loop
+# warnings.filterwarnings("ignore")
 MODEL_CLASSES = {
     "gpt2": (GPT2LMHeadModel, GPT2Tokenizer),
 }
-
 
 def top_k_top_p_filtering(logits, top_k=0, top_p=0.0, filter_value=-float("Inf")):
     """ Filter a distribution of logits using top-k and/or nucleus (top-p) filtering
@@ -70,7 +53,7 @@ def sample_sequence(
     num_samples=1,
     temperature=1,
     top_k=0,
-    top_p=0.0,
+    top_p=0.9,
     repetition_penalty=1.0,
     is_xlnet=False,
     is_xlm_mlm=False,
@@ -86,47 +69,6 @@ def sample_sequence(
         for _ in range(length):
 
             inputs = {"input_ids": generated}
-            if is_xlnet:
-                # XLNet is a direct (predict same token, not next token) and bi-directional model by default
-                # => need one additional dummy token in the input (will be masked), attention mask and target mapping (see model docstring)
-                input_ids = torch.cat(
-                    (generated, torch.zeros((1, 1), dtype=torch.long, device=device)),
-                    dim=1,
-                )
-                perm_mask = torch.zeros(
-                    (1, input_ids.shape[1], input_ids.shape[1]),
-                    dtype=torch.float,
-                    device=device,
-                )
-                perm_mask[:, :, -1] = 1.0  # Previous tokens don't see last token
-                target_mapping = torch.zeros(
-                    (1, 1, input_ids.shape[1]), dtype=torch.float, device=device
-                )
-                target_mapping[0, 0, -1] = 1.0  # predict last token
-                inputs = {
-                    "input_ids": input_ids,
-                    "perm_mask": perm_mask,
-                    "target_mapping": target_mapping,
-                }
-
-            if is_xlm_mlm and xlm_mask_token:
-                # XLM MLM models are direct models (predict same token, not next token)
-                # => need one additional dummy token in the input (will be masked and guessed)
-                input_ids = torch.cat(
-                    (
-                        generated,
-                        torch.full(
-                            (1, 1), xlm_mask_token, dtype=torch.long, device=device
-                        ),
-                    ),
-                    dim=1,
-                )
-                inputs = {"input_ids": input_ids}
-
-            if xlm_lang is not None:
-                inputs["langs"] = torch.tensor(
-                    [xlm_lang] * inputs["input_ids"].shape[1], device=device
-                ).view(1, -1)
 
             outputs = model(
                 **inputs
@@ -167,8 +109,8 @@ class GPT2Generator:
         self.batch_size = 1
         self.stop_token = None
 
-        # self.model_name = "model_v5_pytorch"
-        self.model_name = "model_v5_pytorch_half"
+        self.model_name = "model_v5_pytorch"
+        # self.model_name = "model_v5_pytorch_half"
         self.model_dir = "generator/gpt2/models"
         self.checkpoint_path = os.path.join(self.model_dir, self.model_name)
         # self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model
@@ -223,23 +165,17 @@ class GPT2Generator:
         return out
 
     def prompt_replace(self, prompt):
-        if debug_print:
-            print("\n\nBEFORE PROMPT_REPLACE:")
-            print(repr(prompt))
+        logger.debug("BEFORE PROMPT_REPLACE: `%s`", repr(prompt))
         if len(prompt) > 0 and prompt[-1] == " ":
             prompt = prompt[:-1]
 
         # prompt = second_to_first_person(prompt)
 
-        if debug_print:
-            print("\n\nAFTER PROMPT_REPLACE")
-            print(repr(prompt))
+        logger.debug("AFTER PROMPT_REPLACE: `%s`", repr(prompt))
         return prompt
 
     def result_replace(self, result):
-        if debug_print:
-            print("\n\nBEFORE RESULT_REPLACE:")
-            print(repr(result))
+        logger.debug("BEFORE RESULT_REPLACE: `%s`", repr(result))
 
         result = cut_trailing_sentence(result)
         if len(result) == 0:
@@ -256,9 +192,7 @@ class GPT2Generator:
         if not first_letter_capitalized:
             result = result[0].lower() + result[1:]
 
-        if debug_print:
-            print("\n\nAFTER RESULT_REPLACE:")
-            print(repr(result))
+        logger.debug("nAFTER RESULT_REPLACE: `%s`", repr(result))
 
         return result
 
@@ -286,15 +220,11 @@ class GPT2Generator:
 
         prompt = self.prompt_replace(prompt)
 
-        if debug_print:
-            print("******DEBUG******")
-            print("Prompt is: ", repr(prompt))
+        logger.debug("Prompt is: `%s`", repr(prompt))
 
         text = self.generate_raw(prompt)
 
-        if debug_print:
-            print("Generated result is: ", repr(text))
-            print("******END DEBUG******")
+        logger.debug("Generated result is: `%s`", repr(text))
 
         result = text
         result = self.result_replace(result)

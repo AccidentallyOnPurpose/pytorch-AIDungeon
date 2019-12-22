@@ -1,14 +1,12 @@
 import json
+import logging
 import os
 import subprocess
 import uuid
 from subprocess import Popen
-import logging
 
-from story.utils import *
-
-logger = logging.getLogger(__name__)
-
+from story.utils import (console_print, cut_trailing_sentence, get_similarity,
+                         logger, split_first_sentence)
 
 
 class Story:
@@ -224,7 +222,9 @@ class UnconstrainedStoryManager(StoryManager):
         return result
 
     def generate_result(self, action):
-        block = self.generator.generate(self.story_context() + action)
+        context = self.story_context() + action
+        logger.debug("generating with context: %s", context)
+        block = self.generator.generate(context)
         return block
 
 
