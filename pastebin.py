@@ -6,7 +6,7 @@ from pathlib import Path
 
 def download_clover_prompts():
     """Downloads clover prompts from pastebin."""
-    os.mkdir(Path('prompts', 'pastebin'), exist_ok=True)
+    os.makedirs(Path('prompts', 'pastebin'), exist_ok=True)
     fnamesSoFar = {}
 
     def filename(s):
