@@ -10,6 +10,8 @@ No colab yet.
 
 If you want the converted model, just ask in the issues and I'll make it available.
 
+Content warning: This model is trained on the internet which means there will be lots of toxic and offensive content along with the funny and wierd. 
+
 ## Screenshot
 
 ![](http://i.imgur.com/4Ox8zDX.png)
@@ -29,4 +31,3 @@ If you want the converted model, just ask in the issues and I'll make it availab
   - use pytorch
   - set top_k to zero and just use top p
   - change clover config file to yaml
-
