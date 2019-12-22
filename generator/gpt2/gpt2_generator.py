@@ -1,12 +1,10 @@
 import os
-import warnings
-import logging
 import torch
 import torch.nn.functional as F
 
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from story.utils import second_to_first_person, cut_trailing_sentence, remove_profanity, logger
+from story.utils import cut_trailing_sentence, remove_profanity, logger
 
 # warnings.filterwarnings("ignore")
 MODEL_CLASSES = {

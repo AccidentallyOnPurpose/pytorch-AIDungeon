@@ -21,6 +21,9 @@ settings:
     #the number of words the AI produces at a time? Linearly affects performance.
     generate-num: 60
 
+    # primarily useful for CTRL model; in that case, use 1.2
+    repetition-penalty: 1
+
     #dings the console bell when the AI responds
     #	check your terminal emulator's support for console bells if this doesn't work, it should typically buzz the PC speaker
     #	betcha didn't know ASCII supported sound

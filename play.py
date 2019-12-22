@@ -15,7 +15,7 @@ from story.story_manager import (
     UnconstrainedStoryManager,
     ConstrainedStoryManager,
 )
-from story.utils import logger
+from story.utils import logger, player_died, player_won, first_to_second_person, get_similarity
 import textwrap
 import transformers.tokenization_utils
 
@@ -240,13 +240,14 @@ def main(generator):
                     f"{i}> {a}\n" for i, a in enumerate(suggested_actions)
                 ]
                 suggested_action = "".join(suggested_actions_enum)
-                colPrint(
-                    "\nSuggested actions:\n" + suggested_action,
-                    colors["selection-value"],
-                )
-                print("\n")
+                if len(suggested_actions):
+                    colPrint(
+                        "\nSuggested actions:\n" + suggested_action,
+                        colors["selection-value"],
+                    )
+                    print("\n")
 
-            if settings.getboolean("console-bell"):
+            if settings["console-bell"]:
                 print("\x07", end="")
             action = colInput("> ", colors["main-prompt"], colors["user-text"])
             setRegex = re.search("^set ([^ ]+) ([^ ]+)$", action)
@@ -273,9 +274,16 @@ def main(generator):
                     ):
                         with open("config.ini", "w", encoding="utf-8") as file:
                             config.write(file)
-                    del story_manager.generator
+
                     gc.collect()
-                    story_manager.generator = getGenerator()
+                    k = setRegex.group(1).replace('-', '_')
+                    v = setRegex.group(2)
+                    if hasattr(story_manager.generator, k):
+                        setattr(story_manager.generator, k, v)
+
+                    # # FIXME this is so slow you might as well restart the program, better to just replace variables
+                    # del story_manager.generator
+                    # story_manager.generator = getGenerator()
                 else:
                     colPrint("Invalid Setting", colors["error"])
                     instructions()

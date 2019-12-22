@@ -2,7 +2,6 @@
 import re
 from difflib import SequenceMatcher
 import logging
-import yaml
 from profanityfilter import ProfanityFilter
 
 logger = logging.getLogger(__name__)
