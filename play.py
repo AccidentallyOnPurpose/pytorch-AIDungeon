@@ -257,9 +257,12 @@ def main(generator):
 
             else:
                 if action == "":
-                    action = ""
-                    result = story_manager.act(action)
-                    colPrint(result, colors["ai-text"])
+                    # Use a random suggested action
+                    action = random.sample(suggested_actions, 1)[0]
+                    # result = story_manager.act(action)
+                    # colPrint(result, colors["ai-text"])
+                elif action in [str(i) for i in range(len(suggested_actions))]:
+                    action = suggested_actions[int(action)]
 
                 elif action[0] == '"':
                     action = "You say " + action
