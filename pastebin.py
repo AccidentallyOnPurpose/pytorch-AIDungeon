@@ -20,7 +20,7 @@ def download_clover_prompts():
         return fname2
 
     # paste = request.urlopen("https://pastebin.com/raw/KD4yN2Gc").read().decode("utf-8") # Use this one for the full up to date 4chan experience
-    paste = request.urlopen("https://pastebin.com/edit/SUnQuCum").read().decode("utf-8")
+    paste = request.urlopen("https://pastebin.com/raw/SUnQuCum").read().decode("utf-8")
     paste = re.sub("=====+", "|", paste)
     paste = re.sub("\r", "", paste)
     paste = re.sub("\n\s*\n\s*", "\n\n", paste)
