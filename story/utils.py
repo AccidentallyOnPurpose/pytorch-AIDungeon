@@ -1,7 +1,7 @@
 # coding: utf-8
 import re
-from difflib import SequenceMatcher
 import logging
+from pyjarowinkler import distance
 from profanityfilter import ProfanityFilter
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,9 @@ def console_print(text, width=75):
 
 
 def get_similarity(a, b):
-    return SequenceMatcher(None, a, b).ratio()
+    return distance.get_jaro_distance(
+                            a, b, winkler=True, scaling = 0.1
+                        )
 
 
 def get_num_options(num):
