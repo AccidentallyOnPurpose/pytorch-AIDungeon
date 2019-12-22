@@ -15,9 +15,8 @@ from story.story_manager import (
     UnconstrainedStoryManager,
     ConstrainedStoryManager,
 )
-from story.utils import logger, player_died, player_won, first_to_second_person, get_similarity, cut_trailing_sentence, standardize_punctuation
+from story.utils import logger, player_died, player_won, first_to_second_person, get_similarity, cut_trailing_sentence, standardize_punctuation, cut_trailing_quotes, clean_suggested_action
 import textwrap
-import transformers.tokenization_utils
 
 # silence transformers outputs when loading model
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.WARN)
@@ -153,26 +152,7 @@ class AIPlayer:
         result_raw = self.generator.generate_raw(
             prompt, generate_num=config_act["generate-number"], temperature=config_act["temperature"]
         )
-        result_raw = standardize_punctuation(result_raw)
-
-        # The generations actions carry on into the next prompt, so lets remove the prompt
-        results = result_raw.split("\n")
-        results = [s.strip() for s in results]
-        results = [s for s in results if len(s) > config_act["min-length"]]
-        # Sometimes actions are generated with leading > ! . or ?. Likely the model trying to finish the prompt or start an action.
-        result = results[0].strip().lstrip(" >!.?")
-        result = cut_trailing_quotes(result)
-        logger.debug("full suggested action '%s'. Cropped: '%s'", result_raw, result)
-
-        # Often actions are cropped with sentance fragment, lets remove. Or we could just turn up config_act["generate-number"]
-        last_punc = max(text.rfind("."), text.rfind("!"), text.rfind("?"))
-        if (last_punc / len(result)) > 0.7:
-            result = result[: - i]
-        elif last_punc == len(result):
-            pass
-        else:
-            result += '...'
-        return result
+        return clean_suggested_action(result_raw, min_length=config_act["min-length"])
 
 
 def main(generator):
@@ -249,7 +229,7 @@ def main(generator):
                     story_manager.story.results[-1]
                     if story_manager.story.results
                     else "\nWhat do you do now?"
-                )
+                ) + "\n> "
                 suggested_actions = ai_player.get_actions(action_prompt)
                 if len(suggested_actions):
                     suggested_actions_enum = [

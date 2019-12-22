@@ -103,12 +103,13 @@ class GPT2Generator:
         self.top_p = top_p
         self.censor = censor
         self.samples = 1
+        self.dtype = torch.half
         self.repetition_penalty = 1
         self.batch_size = 1
         self.stop_token = None
 
         self.model_name = "model_v5_pytorch"
-        # self.model_name = "model_v5_pytorch_half"
+        self.model_name = "model_v5_pytorch_half"
         self.model_dir = "generator/gpt2/models"
         self.checkpoint_path = os.path.join(self.model_dir, self.model_name)
         # self.checkpoint_path = 'gpt2' # DEBUG quick test of a smaller untrained model
@@ -119,16 +120,8 @@ class GPT2Generator:
         model_class, tokenizer_class = MODEL_CLASSES["gpt2"]
         self.tokenizer = tokenizer_class.from_pretrained(self.checkpoint_path)
         self.model = model_class.from_pretrained(self.checkpoint_path)
-        self.model.to(self.device)
+        self.model.to(self.device).to(self.dtype)
         self.model.eval()
-
-        # Try to use fp16 for speed and memory
-        try:
-            from apex import amp  # Apex is only required if we use fp16 training
-        except ImportError:
-            pass
-        else:
-            model = amp.initialize(model, opt_level="O2")
 
         # context_tokens = self.tokenizer.encode(' ', add_special_tokens=False)
         context_tokens = [

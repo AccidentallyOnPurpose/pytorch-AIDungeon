@@ -118,6 +118,34 @@ def cut_trailing_action(text):
     return text
 
 
+def clean_suggested_action(result_raw, min_length=4):
+    result_raw = standardize_punctuation(result_raw)
+
+    # The generations actions carry on into the next prompt, so lets remove the prompt
+    results = result_raw.split("\n")
+    results = [s.strip() for s in results]
+    results = [s for s in results if len(s) > min_length]
+    # Sometimes actions are generated with leading > ! . or ?. Likely the model trying to finish the prompt or start an action.
+    result = results[0].strip().lstrip(" >!.?")
+    result = cut_trailing_quotes(result)
+    logger.debug(
+        "full suggested action '%s'. Cropped: '%s'. Split '%s'",
+        result_raw,
+        result,
+        results,
+    )
+
+    # Often actions are cropped with sentance fragment, lets remove. Or we could just turn up config_act["generate-number"]
+    last_punc = max(result.rfind("."), result.rfind("!"), result.rfind("?"))
+    if (last_punc / (len(result) + 1)) > 0.7:
+        result = result[:last_punc]
+    elif last_punc == len(result):
+        pass
+    else:
+        result += "..."
+    return result
+
+
 def cut_trailing_sentence(text):
     text = standardize_punctuation(text)
     last_punc = max(text.rfind("."), text.rfind("!"), text.rfind("?"))
