@@ -122,7 +122,7 @@ if not Path("prompts", "Anime").exists():
         import pastebin
         pastebin.download_clover_prompts()
     except Exception as e:
-        logger.info("Failed to scrape pastebin: %e", e)
+        logger.warning("Failed to scrape pastebin: %e", e)
         colPrint(
             "Failed to scrape pastebin, possible connection issue.\nTry again later. Continuing without downloading prompts...",
             colors["error"],
