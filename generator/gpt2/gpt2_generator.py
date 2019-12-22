@@ -95,7 +95,7 @@ def sample_sequence(
 
 class GPT2Generator:
     def __init__(
-        self, generate_num=60, temperature=0.4, top_k=40, top_p=0.9, censor=False
+        self, generate_num=60, temperature=0.4, top_k=40, top_p=0.9, censor=False, repetition_penalty=1,
     ):
         self.generate_num = generate_num
         self.temp = temperature
@@ -104,7 +104,7 @@ class GPT2Generator:
         self.censor = censor
         self.samples = 1
         self.dtype = torch.half
-        self.repetition_penalty = 1
+        self.repetition_penalty = repetition_penalty
         self.batch_size = 1
         self.stop_token = None
 

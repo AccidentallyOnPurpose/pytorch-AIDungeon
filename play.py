@@ -113,6 +113,7 @@ def getGenerator():
         temperature=settings["temp"],
         top_k=settings["top-keks"],
         top_p=settings["top-p"],
+        repetition_penalty=settings["repetition-penalty"]
     )
 
 

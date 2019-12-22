@@ -2,7 +2,7 @@ google-cloud-storage
 gsutil
 numpy
 profanityfilter
-pyyaml
+pyyaml==5.2.0
 regex
 tracery
 transformers==2.3.0
