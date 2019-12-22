@@ -272,10 +272,20 @@ def main(generator):
                     action = action[0].lower() + action[1:]
 
                     if "You" not in action[:6] and "I" not in action[:6]:
-                        if random.random() > 0.5:
-                            action = "You " + action
-                        else:
+                        # roll a d20
+                        d = random.randint(0, 20)
+                        if d == 1:
+                            action = "You critically fail to " + action
+                        elif d == 20:
+                            action = "You successfully " + action
+                        elif d < 5:
                             action = "You try to " + action
+                        elif d < 10:
+                            action = "You attempt to " + action
+                        elif d < 15:
+                            action = "You start to " + action
+                        else:
+                            action = "You " + action
 
                     if action[-1] not in [".", "?", "!"]:
                         action = action + "."
