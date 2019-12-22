@@ -37,7 +37,7 @@ settings:
     text-wrap-width: 130
 
     #log level for this package, 10: DEBUG, 20: INFO, 30: WARN only
-    log-level: 30
+    log-level: 10
 
     actions:
         # How many words to product for suggested actions
@@ -48,6 +48,8 @@ settings:
 
         # Ignore actions if less than 4
         min-length: 4
+
+        temperature: 1
 
 colors:
     #ECMA-48 set graphics codes

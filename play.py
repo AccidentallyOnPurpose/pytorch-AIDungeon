@@ -15,7 +15,7 @@ from story.story_manager import (
     UnconstrainedStoryManager,
     ConstrainedStoryManager,
 )
-from story.utils import logger, player_died, player_won, first_to_second_person, get_similarity
+from story.utils import logger, player_died, player_won, first_to_second_person, get_similarity, cut_trailing_sentence, standardize_punctuation
 import textwrap
 import transformers.tokenization_utils
 
@@ -133,23 +133,45 @@ class AIPlayer:
     def __init__(self, generator):
         self.generator = generator
 
+    def get_actions(self, prompt):
+        suggested_actions = [
+            self.get_action(prompt)
+            for _ in range(config_act["alternatives"])
+        ]
+        logger.debug("Suggested actions before filter and dedup %s", suggested_actions)
+        # remove short ones
+        suggested_actions = [
+            s
+            for s in suggested_actions
+            if len(s) > config_act["min-length"]
+        ]
+        # remove dups
+        suggested_actions = list(set(suggested_actions))
+        return suggested_actions
+
     def get_action(self, prompt):
-        result = self.generator.generate_raw(
-            prompt, generate_num=int(config_act["generate-number"])
+        result_raw = self.generator.generate_raw(
+            prompt, generate_num=config_act["generate-number"], temperature=config_act["temperature"]
         )
+        result_raw = standardize_punctuation(result_raw)
 
         # The generations actions carry on into the next prompt, so lets remove the prompt
-        results = result.split("\n")
+        results = result_raw.split("\n")
         results = [s.strip() for s in results]
-        results = [s for s in results if len(s) > int(config_act["min-length"])]
-        logger.debug("full suggested action '%s'. Cropped: '%s'", result, results[0])
+        results = [s for s in results if len(s) > config_act["min-length"]]
         # Sometimes actions are generated with leading > ! . or ?. Likely the model trying to finish the prompt or start an action.
         result = results[0].strip().lstrip(" >!.?")
+        result = cut_trailing_quotes(result)
+        logger.debug("full suggested action '%s'. Cropped: '%s'", result_raw, result)
 
         # Often actions are cropped with sentance fragment, lets remove. Or we could just turn up config_act["generate-number"]
-        i = max([result.find(e) for e in [".", "?", "!"]])
-        if i / len(result) > 0.7:
-            result = result[:-i]
+        last_punc = max(text.rfind("."), text.rfind("!"), text.rfind("?"))
+        if (last_punc / len(result)) > 0.7:
+            result = result[: - i]
+        elif last_punc == len(result):
+            pass
+        else:
+            result += '...'
         return result
 
 
@@ -222,25 +244,18 @@ def main(generator):
         while True:
             # Generate suggested actions
             if int(config_act["alternatives"]) > 0:
+
                 action_prompt = (
                     story_manager.story.results[-1]
                     if story_manager.story.results
                     else "\nWhat do you do now?"
                 )
-                suggested_actions = [
-                    ai_player.get_action(action_prompt)
-                    for _ in range(int(config_act["alternatives"]))
-                ]
-                suggested_actions = [
-                    s
-                    for s in suggested_actions
-                    if len(s) > int(config_act["min-length"])
-                ]
-                suggested_actions_enum = [
-                    f"{i}> {a}\n" for i, a in enumerate(suggested_actions)
-                ]
-                suggested_action = "".join(suggested_actions_enum)
+                suggested_actions = ai_player.get_actions(action_prompt)
                 if len(suggested_actions):
+                    suggested_actions_enum = [
+                        f"{i}> {a}\n" for i, a in enumerate(suggested_actions)
+                    ]
+                    suggested_action = "".join(suggested_actions_enum)
                     colPrint(
                         "\nSuggested actions:\n" + suggested_action,
                         colors["selection-value"],
@@ -275,13 +290,14 @@ def main(generator):
                         with open("config.ini", "w", encoding="utf-8") as file:
                             config.write(file)
 
-                    gc.collect()
+                    # Test this
                     k = setRegex.group(1).replace('-', '_')
                     v = setRegex.group(2)
                     if hasattr(story_manager.generator, k):
                         setattr(story_manager.generator, k, v)
 
                     # # FIXME this is so slow you might as well restart the program, better to just replace variables
+                    # gc.collect()
                     # del story_manager.generator
                     # story_manager.generator = getGenerator()
                 else:
@@ -315,33 +331,42 @@ def main(generator):
                 if action == "":
                     # Use a random suggested action
                     action = random.sample(suggested_actions, 1)[0]
-                    # result = story_manager.act(action)
-                    # colPrint(result, colors["ai-text"])
                 elif action in [str(i) for i in range(len(suggested_actions))]:
                     action = suggested_actions[int(action)]
 
+                # Roll a 20 sided dice to make things interesting
+                d = random.randint(1, 20)
+                logger.info("d20 roll %s", d)
                 if action[0] == '"':
-                    action = "You say " + action
-
+                    if d == 1:
+                        verbs_say_d01 = ["mumble", "prattle", "incoherently say", "whine", "ramble", "wheeze"]
+                        verb = random.sample(verbs_say_d01, 1)[0]
+                        action = "You "+verb+" " + action
+                    elif d == 20:
+                        verbs_say_d20 = ["persuasively", "expertly", "conclusively", "dramatically", "adroitly", "aptly"]
+                        verb = random.sample(verbs_say_d20, 1)[0]
+                        action = "You "+verb+" say " + action
+                    else:
+                        action = "You say " + action
                 else:
                     action = action.strip()
                     action = action[0].lower() + action[1:]
-
                     if "You" not in action[:6] and "I" not in action[:6]:
                         # roll a d20
-                        d = random.randint(0, 20)
                         if d == 1:
-                            action = "You critically fail to " + action
-                        elif d == 20:
-                            action = "You successfully " + action
+                            verb_action_d01 = ["disastrously", "incompetently", "dangerously", "stupidly", "horribly", "miserably", "sadly"]
+                            verb = random.sample(verb_action_d01, 1)[0]
+                            action = "You "+verb+" fail to " + action
                         elif d < 5:
-                            action = "You try to " + action
+                            action = "You start to " + action
                         elif d < 10:
                             action = "You attempt to " + action
                         elif d < 15:
-                            action = "You start to " + action
-                        else:
+                            action = "You try to " + action
+                        elif d < 20:
                             action = "You " + action
+                        else:
+                            action = "You successfully " + action
 
                     if action[-1] not in [".", "?", "!"]:
                         action = action + "."

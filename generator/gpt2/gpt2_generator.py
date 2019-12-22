@@ -145,14 +145,15 @@ class GPT2Generator:
                     index = None
                 text = text[:index]
 
-    def sample_sequence(self, context_tokens=None, generate_num=None):
+    def sample_sequence(self, context_tokens=None, generate_num=None, temperature=None):
         generate_num = generate_num if (generate_num is not None) else self.generate_num
+        temperature = temperature if (temperature is not None) else self.temp
         out = sample_sequence(
             model=self.model,
             context=context_tokens,
             length=generate_num,
             # context=self.context,
-            temperature=self.temp,
+            temperature=temperature,
             top_k=self.top_k,
             top_p=self.top_p,
             repetition_penalty=self.repetition_penalty,
@@ -194,14 +195,15 @@ class GPT2Generator:
 
         return result
 
-    def generate_raw(self, prompt, generate_num=None):
+    def generate_raw(self, prompt, generate_num=None, temperature=None):
         context_tokens = self.tokenizer.encode(prompt, add_special_tokens=False)
 
         generated = 0
         for _ in range(self.samples // self.batch_size):
             out = self.sample_sequence(
                 context_tokens,
-                generate_num=generate_num
+                generate_num=generate_num,
+                temperature=temperature
             )
             out = out[:, len(context_tokens) :].tolist()
             for o in out:
