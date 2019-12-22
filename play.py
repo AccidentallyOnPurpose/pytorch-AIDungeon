@@ -341,8 +341,9 @@ def main(generator):
                         action = "You say " + action
                 else:
                     action = action.strip()
-                    action = action[0].lower() + action[1:]
+                    action = first_to_second_person(action)
                     if "You" not in action[:6] and "I" not in action[:6]:
+                        action = action[0].lower() + action[1:]
                         # roll a d20
                         if d == 1:
                             verb_action_d01 = ["disastrously", "incompetently", "dangerously", "stupidly", "horribly", "miserably", "sadly"]
@@ -362,7 +363,7 @@ def main(generator):
                     if action[-1] not in [".", "?", "!"]:
                         action = action + "."
 
-                    action = first_to_second_person(action)
+
 
                 action = "\n> " + action + "\n"
 

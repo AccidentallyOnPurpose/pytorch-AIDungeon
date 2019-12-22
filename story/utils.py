@@ -146,7 +146,8 @@ def clean_suggested_action(result_raw, min_length=4):
 
     # Remove you from start
     result = first_to_second_person(result)
-    result = re.sub('$ ?You ?', '', result)
+    result = re.sub('^ ?[Yy]ou ?', '', result)
+    logger.debug("suggested action after cleaning %s", result)
     return result
 
 
