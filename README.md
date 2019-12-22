@@ -12,8 +12,17 @@ If you want the converted model, just ask in the issues and I'll make it availab
 
 ## Changes
 
-- use half precision for smaller model
-- use pytorch
-- added suggested actions (a bit messy and poor right now)
-- 50% of the time an action is attempted ("You X" vs "You try to X") to make it harder
+- user:
+  - added suggested actions from the AI player
+  - roll a d20 for speech or action to make it harder
+    - d01: You fail to X
+    - dX: You try to X
+    - d20: You successfully X
+  - use Clover edition ui, prompts, config
+- technical:
+  - use half precision for smaller model, (but this might lead to lower quality, I need to test more)
+  - better logging
+  - use pytorch
+  - set top_k to zero and just use top p
+  - change clover config file to yaml
 
