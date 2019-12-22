@@ -154,6 +154,10 @@ class AIPlayer:
         )
         return clean_suggested_action(result_raw, min_length=config_act["min-length"])
 
+def clear_line():
+    """Clear the last line in the terminal."""
+    screen_code = "\033[1A[\033[2K" # up one line, and clear line
+    os.sys.stdout.write(screen_code)
 
 def main(generator):
     story_manager = UnconstrainedStoryManager(generator)
@@ -245,6 +249,13 @@ def main(generator):
             if settings["console-bell"]:
                 print("\x07", end="")
             action = colInput("> ", colors["main-prompt"], colors["user-text"])
+
+            # Clear suggestions and user input
+            for _ in range(len(suggested_actions)+5):
+                clear_line()
+            clear_line()
+            colPrint("\n> " + action, colors["user-text"])
+
             setRegex = re.search("^set ([^ ]+) ([^ ]+)$", action)
             if setRegex:
                 if setRegex.group(1) in settings:
@@ -353,7 +364,7 @@ def main(generator):
 
                     action = first_to_second_person(action)
 
-                    action = "\n> " + action + "\n"
+                action = "\n> " + action + "\n"
 
                 result = "\n" + story_manager.act(action)
                 if len(story_manager.story.results) >= 2:
@@ -361,10 +372,10 @@ def main(generator):
                         story_manager.story.results[-1], story_manager.story.results[-2]
                     )
                     if similarity > 0.9:
-                        story_manager.story.actions = story_manager.story.actions[:-2]
-                        story_manager.story.results = story_manager.story.results[:-2]
+                        story_manager.story.actions = story_manager.story.actions[:-1]
+                        story_manager.story.results = story_manager.story.results[:-1]
                         colPrint(
-                            "Woops that action caused the model to start looping. Try a different action to prevent that.",
+                            "Woops that action caused the model to start looping. Try a different action to prevent that. If it continues type 'revert'",
                             colors["error"],
                         )
                         continue
@@ -387,7 +398,7 @@ def main(generator):
                         colPrint(result, colors["ai-text"])
 
                 else:
-                    colPrint("> " + action, colors["user-text"])
+                    colPrint(">" + action.strip() +"\n", colors["user-text"])
                     colPrint(result, colors["ai-text"])
 
 

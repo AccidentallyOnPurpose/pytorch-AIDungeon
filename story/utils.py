@@ -143,6 +143,10 @@ def clean_suggested_action(result_raw, min_length=4):
         pass
     else:
         result += "..."
+
+    # Remove you from start
+    result = first_to_second_person(result)
+    result = re.sub('$ ?You ?', '', result)
     return result
 
 
