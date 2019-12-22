@@ -47,6 +47,7 @@ def colInput(str, col1=colors["default"], col2=colors["default"]):
 
 
 def getNumberInput(n):
+    while True:
     val = colInput(
         "Enter a number from above (default 0):",
         colors["selection-prompt"],
@@ -54,11 +55,16 @@ def getNumberInput(n):
     )
     if val == "":
         return 0
-    elif 0 > int(val) or int(val) > n:
+        try:
+            val = int(val)
+        except ValueError:
+            colPrint("Invalid number.", colors["error"])
+            continue
+        if 0 > val or val > n:
         colPrint("Invalid choice.", colors["error"])
-        return getNumberInput(n)
+            continue
     else:
-        return int(val)
+            return val
 
 
 def selectFile(p=Path("prompts")):
