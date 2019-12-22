@@ -366,6 +366,7 @@ def main(generator):
 
                 action = "\n> " + action + "\n"
 
+                colPrint(">" + action.strip() +"\n", colors["user-text"])
                 result = "\n" + story_manager.act(action)
                 if len(story_manager.story.results) >= 2:
                     similarity = get_similarity(
@@ -398,7 +399,6 @@ def main(generator):
                         colPrint(result, colors["ai-text"])
 
                 else:
-                    colPrint(">" + action.strip() +"\n", colors["user-text"])
                     colPrint(result, colors["ai-text"])
 
 
