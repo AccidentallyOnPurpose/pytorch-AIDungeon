@@ -66,6 +66,10 @@ class Story:
     def add_to_story(self, action, story_block):
         self.actions.append(action)
         self.results.append(story_block)
+        if (len(str(self)) > 3900):  # (RebootTech, max story of 3900 characters for GTX 2080 ti 11GB
+            self.actions.pop(1)
+            self.results.pop(1)
+
 
     def latest_result(self):
 
