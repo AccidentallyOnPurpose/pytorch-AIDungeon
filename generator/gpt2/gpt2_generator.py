@@ -62,14 +62,23 @@ def sample_sequence(
     context = torch.tensor(context, dtype=torch.long, device=device)
     context = context.unsqueeze(0).repeat(num_samples, 1)
     generated = context
+    outputs = None
     with torch.no_grad():
         # for _ in tqdm(range(length), leave=False, desc='generating'):
         for _ in range(length):
-
+            # TODO need to pass in past and crop inputs https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_gpt2.py#L633
+            past = outputs[1] if outputs is not None else None
+            if outputs is not None:
+                # We only pass in new inputs, which is the last one
+                past = outputs[1]
+                inputs = {"input_ids": generated[:, past[0].shape[3]:]}
+            else:
+                past = None
             inputs = {"input_ids": generated}
 
             outputs = model(
-                **inputs
+                **inputs,
+                past=past
             )  # Note: we could also use 'past' with GPT-2/Transfo-XL/XLNet/CTRL (cached hidden-states)
             next_token_logits = outputs[0][:, -1, :] / (
                 temperature if temperature > 0 else 1.0
@@ -123,20 +132,21 @@ class GPT2Generator:
         self.model.to(self.device).to(self.dtype)
         self.model.eval()
 
-        # context_tokens = self.tokenizer.encode(' ', add_special_tokens=False)
+        # DEBUG quick test of model
+        # with past gen time 1.669926404953003
         context_tokens = [
             self.tokenizer.pad_token_type_id,
             self.tokenizer.pad_token_type_id,
         ]
         out = self.sample_sequence(context_tokens).tolist()
-        # out = out[:, len(context_tokens):].tolist()
-        for o in out:
-            text = self.tokenizer.decode(o, clean_up_tokenization_spaces=True)
-            if self.stop_token:
-                index = text.find(self.stop_token)
-                if index == -1:
-                    index = None
-                text = text[:index]
+        # for o in out:
+        #     text = self.tokenizer.decode(o, clean_up_tokenization_spaces=True)
+        #     if self.stop_token:
+        #         index = text.find(self.stop_token)
+        #         if index == -1:
+        #             index = None
+        #         text = text[:index]
+        # print(text)
 
     def sample_sequence(self, context_tokens=None, generate_num=None, temperature=None):
         generate_num = generate_num if (generate_num is not None) else self.generate_num
