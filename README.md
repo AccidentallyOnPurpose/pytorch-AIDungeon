@@ -34,6 +34,34 @@ Content warning: This model is trained on the internet which means there will be
 
 # Model
 
+You can convert the model using `scripts/convert_gpt2_model.py`
+
+```
+export OPENAI_GPT2_CHECKPOINT_PATH=../generator/gpt2/models/model_v5
+export PYTORCH_DUMP_OUTPUT=../generator/gpt2/models/model_v5_pytorch
+python convert_gpt2_model.py \
+    --gpt2_checkpoint_path $OPENAI_GPT2_CHECKPOINT_PATH \
+    --pytorch_dump_folder_path $PYTORCH_DUMP_OUTPUT \
+    --gpt2_config_file ./aidungeonv2_model_v5_config.json
+wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-xl-merges.txt -o $PYTORCH_DUMP_OUTPUT/merges.txt
+wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-xl-vocab.json -o $PYTORCH_DUMP_OUTPUT/vocab.json
+```
+
+## s3
+
+Here is a temporary s3 download, I will disable if it costs to much
+
+https://g5gh6hdfg76ikyfghdfgerd.s3-us-west-2.amazonaws.com/model_v5_pytorch.tar.gz
+
+```
+> md5sum model_v5_pytorch.tar.gz
+5ec9502a27b087d13e9d9e9bfcff02b2  model_v5_pytorch.tar.gz
+```
+
+## magnet
+
+And here is a slow and unreliable torrent:
+
 <a href="magnet:?xt=urn:btih:17dcfe3d12849db04a3f64070489e6ff5fc6f63f&dn=model_v5_pytorch&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce&tr=udp%3a%2f%2fopen.stealth.si%3a80%2fannounce&tr=udp%3a%2f%2fp4p.arenabg.com%3a1337%2fannounce&tr=udp%3a%2f%2ftracker.coppersurfer.tk%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.cyberia.is%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.moeking.me%3a6969%2fannounce&tr=udp%3a%2f%2f9.rarbg.me%3a2710%2fannounce&tr=udp%3a%2f%2ftracker3.itzmx.com%3a6961%2fannounce">magnet link to pytorch model torrent</a>
 
     ```magnet:?xt=urn:btih:17dcfe3d12849db04a3f64070489e6ff5fc6f63f&dn=model_v5_pytorch&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337%2fannounce&tr=udp%3a%2f%2fopen.stealth.si%3a80%2fannounce&tr=udp%3a%2f%2fp4p.arenabg.com%3a1337%2fannounce&tr=udp%3a%2f%2ftracker.coppersurfer.tk%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.cyberia.is%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.moeking.me%3a6969%2fannounce&tr=udp%3a%2f%2f9.rarbg.me%3a2710%2fannounce&tr=udp%3a%2f%2ftracker3.itzmx.com%3a6961%2fannounce```
