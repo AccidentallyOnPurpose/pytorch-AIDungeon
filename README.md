@@ -1,3 +1,5 @@
+**NOTICE: All development will move to the [clover edition fork](https://github.com/cloveranon/Clover-Edition)**, please go there instead.
+
 # Pytorch AI Dungeon2
 
 A Fork of Nick Walton's [AI Dungeon2](https://github.com/AIDungeon/AIDungeon) and pytorch as a backend. 
